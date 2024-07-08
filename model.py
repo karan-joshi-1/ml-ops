@@ -105,16 +105,22 @@ class Trainer:
             log_print("single gpu")
 
     def initialize_csv_logging(self):
-        with open(self.csv_log_path, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            headers = ["epoch", "training_time", "training_loss"]
-            writer.writerow(headers)
+        try:
+            with open(self.csv_log_path, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                headers = ["epoch", "training_time", "training_loss"]
+                writer.writerow(headers)
+        except Exception as e:
+            log_print(f"Error initializing CSV logging: {e}")
 
     def log_to_csv(self, epoch_index, epoch_start, epoch_end, epoch_loss):
-        with open(self.csv_log_path, mode='a', newline='') as file:
-            writer = csv.writer(file)
-            training_time = epoch_end - epoch_start
-            writer.writerow([epoch_index, training_time, epoch_loss])
+        try:
+            with open(self.csv_log_path, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                training_time = epoch_end - epoch_start
+                writer.writerow([epoch_index, training_time, epoch_loss])
+        except Exception as e:
+            log_print(f"Error logging to CSV: {e}")
 
     def initializeTraining(self):
         self.logInitialize()
@@ -140,7 +146,7 @@ class Trainer:
             try:
                 self.trainEpoch(epoch_index, dataLoader, criterion, optimizer, epochs)
             except Exception as e:
-                log_print(f"Exception {e}")
+                log_print(f"Exception during training: {e}")
 
     def trainEpoch(self, epoch_index, dataLoader, criterion, optimizer, epochs):
         epoch_start = time.time()
@@ -176,10 +182,13 @@ class Trainer:
             for key in final_metrics:
                 mlflow.log_metric(key, final_metrics[key])
 
-        with open(self.csv_log_path, mode='a', newline='') as file:
-            writer = csv.writer(file)
-            for key, value in final_metrics.items():
-                writer.writerow([key, value])
+        try:
+            with open(self.csv_log_path, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                for key, value in final_metrics.items():
+                    writer.writerow([key, value])
+        except Exception as e:
+            log_print(f"Error logging final metrics to CSV: {e}")
 
     def endTraining(self):
         self.log_final_metrics()
@@ -251,13 +260,13 @@ class Trainer:
 
     def logEnd(self):
         if self.logToMlFlow:
-            mlflow.end_run()
-
+           mlflow.end_run()
 
 if __name__ == "__main__":
     try:
         log_print(datetime.datetime.now().strftime("%m_%d_%y-%H_%M"))
         file = open("modelConfig.json")
+        # file = open(os.path.join(os.pardir, "modelConfig.json"))
         training_params = json.load(file)
         file.close()
 
@@ -267,4 +276,5 @@ if __name__ == "__main__":
         trainer.endTraining()
 
     except Exception as err:
+        log_print(f"Exception in main: {err}")
        
